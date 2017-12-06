@@ -1,5 +1,5 @@
-#include <stdext/path.h>
 #include <gtest/gtest.h>
+#include <stdext/path.h>
 
 TEST(Path, Ctor) {
   {
@@ -35,7 +35,41 @@ TEST(Path, Ctor) {
   }
 }
 
-TEST(Path, Append) {
+TEST(Path, WCtor) {
+  {
+    stdext::wpath p;
+    EXPECT_STREQ(L"", p.c_str());
+  }
+  {
+    stdext::wpath p(L"a");
+    EXPECT_STREQ(L"a", p.c_str());
+  }
+  {
+    stdext::wpath p(L"a/b/c");
+    EXPECT_STREQ(L"a/b/c", p.c_str());
+  }
+  {
+    stdext::wpath p(L"/a/b/c");
+    EXPECT_STREQ(L"/a/b/c", p.c_str());
+  }
+  {
+    stdext::wpath p(L"a");
+    stdext::wpath q(p);
+    EXPECT_STREQ(L"a", q.c_str());
+  }
+  {
+    stdext::wpath p(L"a/b/c");
+    stdext::wpath q(p);
+    EXPECT_STREQ(L"a/b/c", q.c_str());
+  }
+  {
+    stdext::wpath p(L"/a/b");
+    stdext::wpath q(p);
+    EXPECT_STREQ(L"/a/b", q.c_str());
+  }
+}
+
+TEST(Path, Join) {
   {
     stdext::path p;
     p.join("a");
@@ -79,171 +113,100 @@ TEST(Path, Append) {
   }
 }
 
-TEST(Path, Ascend) {
+TEST(Path, Parent) {
   {
     stdext::path p;
-    EXPECT_FALSE(p.ascend());
+    EXPECT_STREQ(stdext::path::parentdir, p.parent().c_str());
   }
   {
     stdext::path p("/");
-    EXPECT_FALSE(p.ascend());
+    EXPECT_STREQ("/", p.parent().c_str());
   }
   {
     stdext::path p("a/b/c");
     std::string s;
     EXPECT_STREQ("a/b/c", p.c_str());
-    EXPECT_TRUE(p.ascend());
+    p = p.parent();
     EXPECT_STREQ("a/b", p.c_str());
-    EXPECT_TRUE(p.ascend());
+    p = p.parent();
     EXPECT_STREQ("a", p.c_str());
-    EXPECT_TRUE(p.ascend());
+    p = p.parent();
     EXPECT_STREQ("", p.c_str());
-    EXPECT_FALSE(p.ascend());
-    EXPECT_STREQ("", p.c_str());
-    EXPECT_FALSE(p.ascend());
+    p = p.parent();
+    EXPECT_STREQ(stdext::path::parentdir, p.c_str());
   }
 }
 
-#if 0
-TEST(Path, AbsoluteBaseLast) {
+TEST(Path, DirAndBase) {
   {
     stdext::path p("/");
-    std::string s;
-
-    p.baseComponents(s);
-    EXPECT_EQ(std::string("/"), s);
-    p.lastComponent(s);
-    EXPECT_EQ("", s);
+    EXPECT_EQ("/", p.dirname());
+    EXPECT_EQ("", p.basename());
   }
   {
     stdext::path p("/a");
-    std::string s;
-
-    p.baseComponents(s);
-    EXPECT_EQ("/", s);
-    p.lastComponent(s);
-    EXPECT_EQ("a", s);
+    EXPECT_EQ("/", p.dirname());
+    EXPECT_EQ("a", p.basename());
   }
   {
     stdext::path p("/a/b/c");
-    std::string s;
-
-    p.baseComponents(s);
-    EXPECT_EQ("/a/b", s);
-    p.lastComponent(s);
-    EXPECT_EQ("c", s);
+    EXPECT_EQ("/a/b", p.dirname());
+    EXPECT_EQ("c", p.basename());
   }
 }
 
-TEST(Path, RelativeBaseLast) {
+TEST(Path, RelativeDirAndBase) {
   {
     stdext::path p;
-    std::string s;
-
-    p.baseComponents(s);
-    EXPECT_EQ("", s);
-    p.lastComponent(s);
-    EXPECT_EQ("", s);
+    EXPECT_EQ("", p.dirname());
+    EXPECT_EQ("", p.basename());
   }
   {
     stdext::path p("a");
-    std::string s;
-
-    p.baseComponents(s);
-    EXPECT_EQ("", s);
-    p.lastComponent(s);
-    EXPECT_EQ("a", s);
+    EXPECT_EQ("", p.dirname());
+    EXPECT_EQ("a", p.basename());
   }
   {
     stdext::path p("a/b/c");
-    std::string s;
-
-    p.baseComponents(s);
-    EXPECT_EQ("a/b", s);
-    p.lastComponent(s);
-    EXPECT_EQ("c", s);
+    EXPECT_EQ("a/b", p.dirname());
+    EXPECT_EQ("c", p.basename());
   }
 }
-#endif // if 0
 
 TEST(Path, RelativeOrRoot) {
   {
     stdext::path p;
-    EXPECT_TRUE(p.is_relative());
-    EXPECT_FALSE(p.is_root());
+    EXPECT_TRUE(p.relative());
+    EXPECT_FALSE(p.root());
   }
   {
     stdext::path p("a");
-    EXPECT_TRUE(p.is_relative());
-    EXPECT_FALSE(p.is_root());
+    EXPECT_TRUE(p.relative());
+    EXPECT_FALSE(p.root());
   }
   {
     stdext::path p("a/b/c");
-    EXPECT_TRUE(p.is_relative());
-    EXPECT_FALSE(p.is_root());
+    EXPECT_TRUE(p.relative());
+    EXPECT_FALSE(p.root());
   }
   {
     stdext::path p("/");
-    EXPECT_FALSE(p.is_relative());
-    EXPECT_TRUE(p.is_root());
+    EXPECT_FALSE(p.relative());
+    EXPECT_TRUE(p.root());
   }
   {
     stdext::path p("/a");
-    EXPECT_FALSE(p.is_relative());
-    EXPECT_FALSE(p.is_root());
+    EXPECT_FALSE(p.relative());
+    EXPECT_FALSE(p.root());
   }
   {
     stdext::path p("/a/b/c");
-    EXPECT_FALSE(p.is_relative());
-    EXPECT_FALSE(p.is_root());
+    EXPECT_FALSE(p.relative());
+    EXPECT_FALSE(p.root());
   }
 }
 
 #if 0
-TEST(Path, Iterator) {
-  {
-    stdext::path p;
-    for (auto &str : p) {
-      FAIL();
-    }
-  }
-  {
-    stdext::path p("a/b/c");
-    auto it = p.begin();
-    EXPECT_EQ("a", *it);
-    ++it;
-    EXPECT_NE(it, p.end());
-    EXPECT_EQ("b", *it);
-    ++it;
-    EXPECT_NE(it, p.end());
-    EXPECT_EQ("c", *it);
-    ++it;
-    EXPECT_EQ(it, p.end());
-  }
-  {
-    stdext::path p("/");
-    for (auto &str : p) {
-      EXPECT_EQ("/", str);
-    }
-  }
-  {
-    stdext::path p("/a/b/c");
-    auto it = p.begin();
-    EXPECT_EQ("/", *it);
-    ++it;
-    EXPECT_NE(it, p.end());
-    EXPECT_EQ("a", *it);
-    ++it;
-    EXPECT_NE(it, p.end());
-    EXPECT_EQ("b", *it);
-    ++it;
-    EXPECT_NE(it, p.end());
-    EXPECT_EQ("c", *it);
-    ++it;
-    EXPECT_EQ(it, p.end());
-  }
-}
-
 TEST(PathList, Iterator) {
   stdext::path cwd;
   stdext::path::current(cwd);
