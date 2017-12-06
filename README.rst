@@ -1,10 +1,12 @@
------------
+===========
 stdext-path
------------
+===========
 Path manipulation utilities in C++
 
 Usage
 -----
+
+Example:
 ::
    stdext::path p("a/b/c");
    std::cout << p.str() << endl;                // a/b/c
