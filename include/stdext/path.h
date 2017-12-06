@@ -1,5 +1,3 @@
-// Public domain
-
 #ifndef STDEXT_PATH_H
 #define STDEXT_PATH_H
 
