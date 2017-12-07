@@ -8,6 +8,11 @@ std::string to_winsep(const char *s) {
   std::replace(t.begin(), t.end(), '/', '\\');
   return t;
 }
+std::wstring to_winsep(const wchar_t *s) {
+  std::wstring t(s);
+  std::replace(t.begin(), t.end(), L'/', L'\\');
+  return t;
+}
 #define P(x) to_winsep(x).c_str()
 #else
 #define P(x) x

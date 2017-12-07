@@ -3,7 +3,7 @@ from externals.googletest import googletest
 from toolchains.pam import *
 
 
-stdext_path = cxx_library(
+stdext_path = cxx_project(
     name = "stdext-path",
     incpaths = [("include", {"publish": True})]
 )

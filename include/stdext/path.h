@@ -2,6 +2,7 @@
 #define STDEXT_PATH_H
 
 #include <algorithm>
+#include <functional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -9,9 +10,27 @@
 
 namespace stdext {
 
+namespace detail {
+
+template<class T>
+struct path_helper {};
+
+template<>
+struct path_helper<char> {
+  static constexpr const char *parentdir = "..";
+};
+
+template<>
+struct path_helper<wchar_t> {
+  static constexpr const wchar_t *parentdir = L"..";
+};
+
+}
+
 template <class CharT, class Traits = std::char_traits<CharT>,
           class Allocator = std::allocator<CharT>>
 class basic_path {
+
 public:
   typedef Traits traits_type;
   typedef CharT value_type;
@@ -32,7 +51,7 @@ public:
   static constexpr const CharT separator = '/';
 #endif
 
-  static constexpr const CharT *parentdir = "..";
+  static constexpr const CharT *parentdir = detail::path_helper<CharT>::parentdir;
 
 public:
   basic_path() { _rel = true; }
