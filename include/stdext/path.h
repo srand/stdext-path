@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <tuple>
 
 namespace stdext {
 
@@ -25,11 +26,18 @@ public:
   typedef value_type &reference;
   typedef const value_type &const_reference;
 
+#if defined(_WIN32) || defined(_WIN64)
+  static constexpr const CharT separator = '\\';
+#else
   static constexpr const CharT separator = '/';
+#endif
+
   static constexpr const CharT *parentdir = "..";
 
 public:
   basic_path() { _rel = true; }
+
+  basic_path(basic_path&& p) noexcept : _comp(std::move(p._comp)), _rel(p._rel), _path(std::move(p._path)) { }
 
   basic_path(const string_type &p) {
     string_type cp = p;
@@ -54,65 +62,74 @@ public:
   basic_path(const basic_path<CharT, Traits, Allocator> &p)
       : _comp(p._comp), _rel(p._rel) {}
 
+  basic_path<CharT, Traits, Allocator> & operator= (basic_path<CharT, Traits, Allocator> && p) {
+    _comp = std::move(p._comp);
+    _rel = p._rel;
+    _path = std::move(p._path);
+    return *this;
+  }
+
+  basic_path<CharT, Traits, Allocator> & operator= (const basic_path<CharT, Traits, Allocator> & p) {
+    _comp = p._comp;
+    _rel = p._rel;
+    _path = p._path;
+    return *this;
+  }
+
   string_type str() const {
     std::basic_ostringstream<CharT, Traits, Allocator> os;
 
     if (_comp.empty()) {
       if (_rel) {
-        _path.clear();
+        return std::move(string_type());
       } else {
-        _path = separator;
+        return std::move(string_type(1, separator));
       }
-      return _path.c_str();
     }
 
     for (auto &comp : _comp) {
       os << separator << comp;
     }
 
-    _path = os.str();
+    string_type result = os.str();
     if (_rel) {
-      _trim(_path);
+      _trim(result);
     }
-    return _path;
+    return std::move(result);
   }
 
   const CharT *c_str() const {
-    str();
-    return _path.c_str();
+    return (_path = str()).c_str();
   }
 
   bool relative() const { return _rel; }
 
   bool root() const { return _comp.empty() && !_rel; }
 
-  bool is_directory() const {
-    struct stat st;
-    if (0 != stat(c_str(), &st)) {
-      return false;
-    }
-    return S_ISDIR(st.st_mode);
-  }
-
-  void join(const string_type &comp) {
+  basic_path<CharT, Traits, Allocator> & join(const string_type &comp) {
     basic_path<CharT, Traits, Allocator> p(comp);
-    join(p);
+    return join(p);
   }
 
-  void join(const basic_path<CharT, Traits, Allocator> &p) {
+  basic_path<CharT, Traits, Allocator> & join(const basic_path<CharT, Traits, Allocator> &p) {
     for (auto comp : p._comp) {
       _comp.emplace_back(comp);
     }
     normalize();
+    return *this;
+  }
+
+  basic_path<CharT, Traits, Allocator> & parent() {
+    return join(parentdir);
   }
 
   basic_path<CharT, Traits, Allocator> parent() const {
     auto p = *this;
     p.join(parentdir);
-    return p;
+    return std::move(p);
   }
 
-  void normalize() {
+  basic_path<CharT, Traits, Allocator> & normalize() {
     typename std::vector<string_type>::size_type i = 0;
     while (i < _comp.size()) {
       if (_comp[i] == ".") {
@@ -130,32 +147,35 @@ public:
       }
       i++;
     }
+    return *this;
   }
 
-  std::pair<basic_path<CharT, Traits, Allocator>,
-            basic_path<CharT, Traits, Allocator>>
+  std::tuple<basic_path<CharT, Traits, Allocator>,
+             basic_path<CharT, Traits, Allocator>>
   split() const {
     basic_path<CharT, Traits, Allocator> dir(*this);
     basic_path<CharT, Traits, Allocator> base(_comp.empty() ? ""
                                                             : *_comp.rbegin());
     if (!_comp.empty())
-      dir.join(parentdir);
-    return std::pair<basic_path<CharT, Traits, Allocator>,
-                     basic_path<CharT, Traits, Allocator>>(dir, base);
+      dir.parent();
+    return std::make_tuple(std::move(dir), std::move(base));
   }
 
   string_type dirname() const {
-    auto pair = split();
-    return pair.first.str();
+    if (!_comp.empty())
+      return parent().str();
+    else
+      return std::move(str());
   }
 
   string_type basename() const {
-    auto pair = split();
-    return pair.second.str();
+    basic_path<CharT, Traits, Allocator> base(
+      _comp.empty() ? "" : *_comp.rbegin());
+    return std::move(base.str());
   }
 
 private:
-  static int _issep(int c) { return c == '/' || c == '\\'; }
+  static int _issep(int c) { return c == separator; }
 
   static void _ltrim(string_type &s) {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(),
