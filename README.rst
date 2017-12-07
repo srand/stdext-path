@@ -31,7 +31,7 @@ Build
 
 Use Pam, http://github.com/srand/pam
 ::
-   from externals.stdext import path as stdext_path
+   from externals.stdext import stdext_path
 
    cxx_executable(
       name = "hello",
