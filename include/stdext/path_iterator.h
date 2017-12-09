@@ -10,6 +10,37 @@
 
 namespace stdext {
 
+namespace detail {
+#if defined(_WIN32) || defined(_WIN64)
+    template<class CharT>
+    struct path_iterator_helper {};
+
+    template<>
+    struct path_iterator_helper<char> {
+        typedef WIN32_FIND_DATAA data;
+        static constexpr const char *match_all = "\\*";
+        static HANDLE find(const char *path, data *data) {
+            return FindFirstFileA(path, data);
+        }
+        static bool next(HANDLE h, data *data) {
+            return FindNextFileA(h, data);
+        }
+    };
+
+    template<>
+    struct path_iterator_helper<wchar_t> {
+        typedef WIN32_FIND_DATAW data;
+        static constexpr const wchar_t *match_all = L"\\*";
+        static HANDLE find(const wchar_t *path, data *data) {
+            return FindFirstFileW(path, data);
+        }
+        static bool next(HANDLE h, data *data) {
+            return FindNextFileW(h, data);
+        }
+    };
+#endif
+}
+
 template <class CharT, class Traits = std::char_traits<CharT>,
           class Allocator = std::allocator<CharT>>
 class basic_path_iterator {
@@ -17,7 +48,7 @@ class basic_path_iterator {
     basic_path<CharT, Traits, Allocator> _current;
 
 #if defined(_WIN32) || defined(_WIN64)
-	WIN32_FIND_DATA _data;
+	typename detail::path_iterator_helper<CharT>::data _data;
 	HANDLE _handle;
 #else
     DIR *_dir;
@@ -35,8 +66,8 @@ public:
     basic_path_iterator(const basic_path<CharT, Traits, Allocator> & p) : _path(p) {
 #if defined(_WIN32) || defined(_WIN64)
 	    basic_path<CharT, Traits, Allocator> searchpath = _path;
-    	searchpath.join("\\*");
-    	_handle = FindFirstFile(searchpath.c_str(), &_data);
+    	searchpath.join(detail::path_iterator_helper<CharT>::match_all);
+    	_handle = detail::path_iterator_helper<CharT>::find(searchpath.c_str(), &_data);
 #else
 	    _dir = opendir(p.c_str());
         _result = 0;
@@ -47,8 +78,8 @@ public:
         : _path(p._path), _current(p._current) {
 #if defined(_WIN32) || defined(_WIN64)
 	    basic_path<CharT, Traits, Allocator> searchpath = _path;
-    	searchpath.join("\\*");
-    	_handle = FindFirstFile(searchpath.c_str(), &_data);
+    	searchpath.join(detail::path_iterator_helper<CharT>::match_all);
+    	_handle = detail::path_iterator_helper<CharT>::find(searchpath.c_str(), &_data);
 #else
 	    _dir = opendir(p.c_str());
         _result = 0;
@@ -115,11 +146,12 @@ private:
 #if defined(_WIN32) || defined(_WIN64)
 	    while (_handle != INVALID_HANDLE_VALUE) {
 		    component = _data.cFileName;
-		    if (!FindNextFile(_handle, &_data)) {
+		    if (!detail::path_iterator_helper<CharT>::next(_handle, &_data)) {
 			    CloseHandle(_handle);
 			    _handle = INVALID_HANDLE_VALUE;
 		    }
-		    if (component != "." && component != "..") {
+		    if (component != basic_path<CharT, Traits, Allocator>::currentdir && 
+                component != basic_path<CharT, Traits, Allocator>::parentdir) {
 			    return true;
             }
     	}
@@ -128,7 +160,8 @@ private:
 		    int rv = readdir_r(_dir, &_dirent, &_result);
 		    if (0 == rv && _result != 0) {
 			    component = _dirent.d_name;
-			    if (component == "." || component == "..") {
+		    if (component == basic_path<CharT, Traits, Allocator>::currentdir ||
+                component == basic_path<CharT, Traits, Allocator>::parentdir) {
 				    return advance(component);
 			    }
 			    return true;

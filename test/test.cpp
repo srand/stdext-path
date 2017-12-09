@@ -246,6 +246,12 @@ TEST(Path, Iterator) {
   for (stdext::path path : cwd) {
     std::cout << path.str() << std::endl;
   }
+#if defined(_WIN32) && defined(_WIN64)
+  stdext::wpath wcwd(L".");
+  for (stdext::wpath wpath : wcwd) {
+    std::wcout << wpath.str() << std::endl;
+  }
+#endif
 }
 
 

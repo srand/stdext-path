@@ -18,11 +18,13 @@ struct path_helper {};
 
 template<>
 struct path_helper<char> {
+  static constexpr const char *currentdir = ".";
   static constexpr const char *parentdir = "..";
 };
 
 template<>
 struct path_helper<wchar_t> {
+  static constexpr const wchar_t *currentdir = L".";
   static constexpr const wchar_t *parentdir = L"..";
 };
 
@@ -52,6 +54,7 @@ public:
   static constexpr const CharT separator = '/';
 #endif
 
+  static constexpr const CharT *currentdir = detail::path_helper<CharT>::currentdir;
   static constexpr const CharT *parentdir = detail::path_helper<CharT>::parentdir;
 
 public:
@@ -152,7 +155,7 @@ public:
   basic_path<CharT, Traits, Allocator> & normalize() {
     typename std::vector<string_type>::size_type i = 0;
     while (i < _comp.size()) {
-      if (_comp[i] == ".") {
+      if (_comp[i] == currentdir) {
         _comp.erase(_comp.begin() + i);
         continue;
       }
