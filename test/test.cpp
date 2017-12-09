@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <stdext/path.h>
+#include <stdext/path_iterator.h>
 #include <memory>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -238,20 +239,15 @@ TEST(Path, RelativeOrRoot) {
   }
 }
 
-#if 0
-TEST(PathList, Iterator) {
-  stdext::path cwd;
-  stdext::path::current(cwd);
-  std::cout << "Current directory: " << cwd << std::endl;
+TEST(Path, Iterator) {
+  using namespace stdext;
 
-  stdext::pathList list(cwd);
-  for (stdext::path path : list) {
-    std::string pathString;
-    path.asString(pathString);
-    std::cout << pathString << std::endl;
+  stdext::path cwd(".");
+  for (stdext::path path : cwd) {
+    std::cout << path.str() << std::endl;
   }
 }
-#endif
+
 
 int main(int argc, char *argv[]) {
   testing::InitGoogleTest(&argc, argv);

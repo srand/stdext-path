@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <functional>
 #include <sstream>
+#include <iostream>
 #include <string>
 #include <vector>
 #include <tuple>
@@ -193,6 +194,10 @@ public:
     return std::move(base.str());
   }
 
+  bool operator == (const basic_path<CharT, Traits, Allocator> &p) const {
+    return _comp == p._comp && _rel == p._rel;
+  }
+
 private:
   static int _issep(int c) { return c == separator; }
 
@@ -221,6 +226,7 @@ private:
 
 typedef basic_path<char> path;
 typedef basic_path<wchar_t> wpath;
-}
+
+} // stdext
 
 #endif // STDEXT_PATH_H

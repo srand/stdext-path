@@ -25,6 +25,9 @@ Example:
    p = stdext::path("a/../b")
    std::cout << p.normalize().str() << std::endl;    // b
 
+   for (auto path : stdext::path(".")) {             // enumerate current directory
+       std::cout << path.str() << std::endl;
+   }
 
 Build
 -----
