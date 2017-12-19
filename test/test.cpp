@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
+#include <memory>
 #include <stdext/path.h>
 #include <stdext/path_iterator.h>
-#include <memory>
 
 #if defined(_WIN32) || defined(_WIN64)
 std::string to_winsep(const char *s) {
@@ -18,7 +18,6 @@ std::wstring to_winsep(const wchar_t *s) {
 #else
 #define P(x) x
 #endif
-
 
 TEST(Path, Ctor) {
   {
@@ -246,14 +245,13 @@ TEST(Path, Iterator) {
   for (stdext::path path : cwd) {
     std::cout << path.str() << std::endl;
   }
-#if defined(_WIN32) && defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64)
   stdext::wpath wcwd(L".");
   for (stdext::wpath wpath : wcwd) {
     std::wcout << wpath.str() << std::endl;
   }
 #endif
 }
-
 
 int main(int argc, char *argv[]) {
   testing::InitGoogleTest(&argc, argv);

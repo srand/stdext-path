@@ -3,31 +3,27 @@
 
 #include <algorithm>
 #include <functional>
-#include <sstream>
 #include <iostream>
+#include <sstream>
 #include <string>
-#include <vector>
 #include <tuple>
+#include <vector>
 
 namespace stdext {
 
 namespace detail {
 
-template<class T>
-struct path_helper {};
+template <class T> struct path_helper {};
 
-template<>
-struct path_helper<char> {
+template <> struct path_helper<char> {
   static constexpr const char *currentdir = ".";
   static constexpr const char *parentdir = "..";
 };
 
-template<>
-struct path_helper<wchar_t> {
+template <> struct path_helper<wchar_t> {
   static constexpr const wchar_t *currentdir = L".";
   static constexpr const wchar_t *parentdir = L"..";
 };
-
 }
 
 template <class CharT, class Traits = std::char_traits<CharT>,
@@ -54,13 +50,16 @@ public:
   static constexpr const CharT separator = '/';
 #endif
 
-  static constexpr const CharT *currentdir = detail::path_helper<CharT>::currentdir;
-  static constexpr const CharT *parentdir = detail::path_helper<CharT>::parentdir;
+  static constexpr const CharT *currentdir =
+      detail::path_helper<CharT>::currentdir;
+  static constexpr const CharT *parentdir =
+      detail::path_helper<CharT>::parentdir;
 
 public:
   basic_path() { _rel = true; }
 
-  basic_path(basic_path&& p) noexcept : _comp(std::move(p._comp)), _rel(p._rel), _path(std::move(p._path)) { }
+  basic_path(basic_path &&p) noexcept
+      : _comp(std::move(p._comp)), _rel(p._rel), _path(std::move(p._path)) {}
 
   basic_path(const string_type &p) {
     string_type cp = p;
@@ -85,14 +84,16 @@ public:
   basic_path(const basic_path<CharT, Traits, Allocator> &p)
       : _comp(p._comp), _rel(p._rel) {}
 
-  basic_path<CharT, Traits, Allocator> & operator= (basic_path<CharT, Traits, Allocator> && p) {
+  basic_path<CharT, Traits, Allocator> &
+  operator=(basic_path<CharT, Traits, Allocator> &&p) {
     _comp = std::move(p._comp);
     _rel = p._rel;
     _path = std::move(p._path);
     return *this;
   }
 
-  basic_path<CharT, Traits, Allocator> & operator= (const basic_path<CharT, Traits, Allocator> & p) {
+  basic_path<CharT, Traits, Allocator> &
+  operator=(const basic_path<CharT, Traits, Allocator> &p) {
     _comp = p._comp;
     _rel = p._rel;
     _path = p._path;
@@ -121,20 +122,19 @@ public:
     return std::move(result);
   }
 
-  const CharT *c_str() const {
-    return (_path = str()).c_str();
-  }
+  const CharT *c_str() const { return (_path = str()).c_str(); }
 
   bool relative() const { return _rel; }
 
   bool root() const { return _comp.empty() && !_rel; }
 
-  basic_path<CharT, Traits, Allocator> & join(const string_type &comp) {
+  basic_path<CharT, Traits, Allocator> &join(const string_type &comp) {
     basic_path<CharT, Traits, Allocator> p(comp);
     return join(p);
   }
 
-  basic_path<CharT, Traits, Allocator> & join(const basic_path<CharT, Traits, Allocator> &p) {
+  basic_path<CharT, Traits, Allocator> &
+  join(const basic_path<CharT, Traits, Allocator> &p) {
     for (auto comp : p._comp) {
       _comp.emplace_back(comp);
     }
@@ -142,9 +142,7 @@ public:
     return *this;
   }
 
-  basic_path<CharT, Traits, Allocator> & parent() {
-    return join(parentdir);
-  }
+  basic_path<CharT, Traits, Allocator> &parent() { return join(parentdir); }
 
   basic_path<CharT, Traits, Allocator> parent() const {
     auto p = *this;
@@ -152,7 +150,7 @@ public:
     return std::move(p);
   }
 
-  basic_path<CharT, Traits, Allocator> & normalize() {
+  basic_path<CharT, Traits, Allocator> &normalize() {
     typename std::vector<string_type>::size_type i = 0;
     while (i < _comp.size()) {
       if (_comp[i] == currentdir) {
@@ -192,12 +190,12 @@ public:
   }
 
   string_type basename() const {
-    basic_path<CharT, Traits, Allocator> base(
-      _comp.empty() ? "" : *_comp.rbegin());
+    basic_path<CharT, Traits, Allocator> base(_comp.empty() ? ""
+                                                            : *_comp.rbegin());
     return std::move(base.str());
   }
 
-  bool operator == (const basic_path<CharT, Traits, Allocator> &p) const {
+  bool operator==(const basic_path<CharT, Traits, Allocator> &p) const {
     return _comp == p._comp && _rel == p._rel;
   }
 
